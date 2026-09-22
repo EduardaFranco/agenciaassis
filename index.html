@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Assis Detetives Particulares</title>
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<!--
+  ÍNDEX / TELA INICIAL
+  ------------------------------------------------------------
+  Porta de entrada do site. Dois caminhos possíveis pro jogador:
+  - "criar.html"   → abrir uma ficha nova (registrar-se como investigador)
+  - "acessar.html" → entrar numa ficha já existente, com o código de acesso
+  E um terceiro caminho, escondido no rodapé, só pra você (mestre):
+  - "mestre.html"  → painel com a lista de todos os investigadores
+-->
+<div class="pagina">
+  <div class="conteudo">
+    <div class="cartao">
+
+      <!-- Cabeçalho com o "logo" (lupa em SVG) e o texto de
+           apresentação da agência. É esse texto que dá o tom
+           imersivo — troque à vontade se quiser ajustar o clima. -->
+      <div class="logo-topo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="10" r="6.5" stroke="#6E1F2B" stroke-width="1.8"/>
+          <line x1="14.7" y1="14.7" x2="20.5" y2="20.5" stroke="#B08D57" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <h1>Assis Detetives Particulares</h1>
+        <p>
+          Olá! Você foi requisitado em um novo caso. Por gentileza,
+          acesse seu dossiê e complete as informações requisitadas.
+          Boa sorte :)
+        </p>
+      </div>
+
+      <!-- Botão primário: cria uma ficha nova (novo investigador).
+           Botão secundário: entra numa ficha já existente. -->
+      <div class="linha-botoes" style="flex-direction: column;">
+        <a href="criar.html" class="botao botao-primario">Abrir meu dossiê</a>
+        <a href="acessar.html" class="botao botao-secundario">Já sou investigador</a>
+      </div>
+
+      <!-- Link discreto no rodapé, só pra você (mestre) entrar no
+           painel de controle de todas as fichas. -->
+      <p class="ajuda-texto"><a href="mestre.html">Sou da coordenação, acessar o painel →</a></p>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+<script>
+// Desenha as ondas decorativas fixas no rodapé da tela (ver
+// inserirOndas() em assets/app.js). Toda página do site chama
+// essa função logo no início do seu <script>.
+inserirOndas();
+</script>
+</body>
+</html>

@@ -1,0 +1,553 @@
+/* ============================================================
+   STYLE.CSS — visual do site inteiro
+   ============================================================
+   Um único arquivo de estilo compartilhado por todas as páginas.
+   Está organizado em blocos por assunto (layout, botões,
+   formulário, ficha, etc.) — cada bloco tem um comentário
+   "---------- Nome do bloco ----------" pra facilitar achar o
+   que você quer mudar.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Nunito:wght@400;600;700;800&display=swap');
+
+/* Variáveis de cor e medidas usadas no site inteiro (var(--nome)).
+   Trocar uma cor aqui muda em todo canto que ela é usada.
+   Paleta "agência de detetive": escritório escuro à noite (fundo),
+   dossiês em papel envelhecido (cartões), detalhes em latão/dourado
+   e um bordô profundo como cor de destaque/marca. Os NOMES das
+   variáveis ficaram os mesmos de antes (pra não precisar caçar
+   cada uso no CSS/HTML), só os valores de cor mudaram. */
+:root {
+  --areia: #15141A;        /* fundo da página: escritório escuro à noite */
+  --ceu: #EFE7D6;          /* fundo de caixinhas de dica/legenda: papel claro */
+  --agua-clara: #D8C6A0;   /* botões secundários, perícias travadas: latão claro */
+  --agua-media: #B08D57;   /* detalhes, borda do avatar: latão médio */
+  --agua-funda: #8A5A22;   /* textos de destaque: âmbar/café escuro */
+  --azul-noite: #6E1F2B;   /* cor principal (títulos, botão primário): bordô */
+  --coral: #C1652E;        /* cor de apoio (não muito usada ainda): ferrugem */
+  --tinta: #241C15;        /* cor do texto padrão: quase preto, tom quente */
+  --tinta-suave: #6B5D4C;  /* texto secundário/legendas: marrom acinzentado */
+  --branco: #FDFBF5;
+  --sombra: 0 10px 30px rgba(0, 0, 0, 0.45); /* sombra padrão dos cartões */
+  --raio: 10px; /* raio de borda padrão dos cartões (mais reto = mais "oficial") */
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: 'Nunito', sans-serif;
+  color: var(--tinta);
+  background: var(--areia);
+}
+
+/* Dois brilhos suaves no fundo da página, só decorativos —
+   agora um clarão quente de luminária e um brilho de latão,
+   em vez dos tons de água de antes. */
+body {
+  background-image:
+    radial-gradient(circle at 15% 15%, rgba(176, 141, 87, 0.16) 0, transparent 45%),
+    radial-gradient(circle at 85% 10%, rgba(110, 31, 43, 0.18) 0, transparent 40%);
+}
+
+h1, h2, h3, .titulo-jogo {
+  font-family: 'Special Elite', 'Nunito', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--azul-noite);
+}
+
+a { color: inherit; }
+
+/* ---------- Layout base de página ----------
+   Todo .html do site segue a mesma estrutura:
+   <div class="pagina"><div class="conteudo"><div class="cartao">...
+   ".pagina" centraliza tudo na tela e deixa espaço embaixo pras
+   ondas; ".conteudo" limita a largura do conteúdo; ".cartao" é o
+   "cartão branco" onde o conteúdo de fato mora. */
+.pagina {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px 140px; /* padding-bottom maior pra sobrar espaço acima das ondas */
+  overflow: hidden;
+}
+
+.conteudo {
+  position: relative;
+  z-index: 2; /* fica acima das ondas, que têm z-index: 0 */
+  width: 100%;
+  max-width: 480px;
+}
+
+/* usada em páginas mais largas, como o painel da mestre */
+.conteudo.larga { max-width: 760px; }
+
+/* ---------- Névoa decorativa de fundo ----------
+   O SVG em si é inserido via JS (inserirOndas(), em app.js) —
+   aqui só definimos a posição/tamanho do container. (Mantivemos o
+   nome "ondas"/"inserirOndas" no código pra não precisar caçar
+   toda referência a essa função pelo site — só a aparência mudou,
+   de ondas do mar pra uma névoa noturna.) */
+.ondas {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 0;
+  pointer-events: none; /* nunca atrapalha cliques em elementos acima */
+  line-height: 0;
+}
+
+/* ---------- Cartão / painel ----------
+   O "cartão branco" (com leve transparência/blur) usado em toda
+   página como container principal do conteúdo. */
+.cartao {
+  background: rgba(250, 244, 230, 0.94); /* papel envelhecido, tipo um dossiê */
+  backdrop-filter: blur(6px);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  border: 1px solid rgba(176, 141, 87, 0.35);
+  padding: 32px 28px;
+}
+
+/* linha "🔍 Assis Detetives Particulares / Nome da seção" no topo de cada página */
+.cabecalho-secao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--agua-funda);
+  margin-bottom: 22px;
+}
+
+.cabecalho-secao .onda-emoji { font-size: 1.1rem; }
+
+/* ---------- Logo / topo intro (usado na tela inicial) ---------- */
+.logo-topo {
+  text-align: center;
+  margin-bottom: 8px;
+}
+.logo-topo svg { width: 56px; height: 56px; }
+.logo-topo h1 {
+  font-size: 2rem;
+  margin: 8px 0 4px;
+}
+.logo-topo p {
+  color: var(--tinta-suave);
+  font-size: 1.02rem;
+  margin: 0 0 32px;
+}
+
+/* ---------- Botões ----------
+   .botao é a base; combine com uma das variantes
+   (.botao-primario / .botao-secundario / .botao-fantasma) e,
+   se quiser, com .botao-pequeno pra não ocupar a largura toda. */
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 15px 18px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.botao:active { transform: translateY(1px); } /* efeito de "clique" */
+
+.botao-primario {
+  background: var(--azul-noite);
+  color: var(--branco);
+  box-shadow: 0 8px 18px rgba(27, 59, 95, 0.28);
+}
+.botao-primario:hover { background: #142c48; }
+
+.botao-secundario {
+  background: var(--agua-clara);
+  color: var(--azul-noite);
+}
+.botao-secundario:hover { background: #a9dcee; }
+
+/* botão "de texto", tipo um link sublinhado (ex: "← Voltar") */
+.botao-fantasma {
+  background: transparent;
+  color: var(--agua-funda);
+  text-decoration: underline;
+  font-weight: 700;
+  padding: 6px;
+}
+
+.botao-pequeno { width: auto; padding: 10px 18px; font-size: 0.9rem; }
+
+.botao[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+.linha-botoes { display: flex; gap: 12px; margin-top: 24px; }
+
+/* ---------- Formulário ----------
+   Estilo padrão de <label>, <input>, <textarea> e <select>. */
+label {
+  display: block;
+  font-weight: 700;
+  color: var(--azul-noite);
+  margin: 18px 0 8px;
+  font-size: 0.95rem;
+}
+label:first-of-type { margin-top: 0; } /* o primeiro label de cada cartão não precisa de respiro em cima */
+
+input[type="text"],
+input[type="number"],
+input[type="password"],
+textarea,
+select {
+  width: 100%;
+  border: 1.5px solid var(--agua-clara);
+  background: var(--branco);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.98rem;
+  color: var(--tinta);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+input::placeholder, textarea::placeholder { color: #9BB2C2; }
+input:focus, textarea:focus, select:focus { border-color: var(--agua-media); }
+
+textarea { min-height: 100px; resize: vertical; font-family: 'Nunito', sans-serif; }
+
+/* caixinha azul-clara de dica/ajuda (usada em "Qual sua história?"
+   e também pra mostrar a descrição da especialização escolhida) */
+.dica-campo {
+  background: var(--ceu);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: var(--tinta-suave);
+  font-size: 0.9rem;
+  margin: 10px 0 4px;
+  line-height: 1.5;
+}
+
+.ajuda-texto { font-size: 0.85rem; color: var(--tinta-suave); text-align: center; margin-top: 14px; }
+
+/* ---------- Avatar circular ---------- */
+.avatar-circulo {
+  width: 110px;
+  height: 110px;
+  margin: 0 auto 6px;
+  border-radius: 50%;
+  border: 3px solid var(--agua-media);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #4A4038 55%, #2E2620 55%); /* silhueta neutra quando não tem foto */
+}
+.avatar-circulo svg { width: 60%; }
+
+/* ---------- Cabeçalho da ficha (foto + nome/idade/especialização) ---------- */
+.cabecalho-ficha {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.cabecalho-ficha .avatar-circulo { width: 84px; height: 84px; margin: 0; flex-shrink: 0; }
+.cabecalho-ficha .info-basica p { margin: 2px 0; font-size: 0.95rem; }
+.cabecalho-ficha .info-basica strong { color: var(--azul-noite); }
+
+/* Vida / Sanidade / Erosões — versão só de leitura (3 caixinhas) */
+.faixa-vitais {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 16px 0 20px;
+}
+.vital {
+  flex: 1;
+  text-align: center;
+  background: var(--ceu);
+  border-radius: 12px;
+  padding: 10px 6px;
+}
+.vital .valor { font-family: 'Special Elite'; font-size: 1.3rem; color: var(--azul-noite); }
+.vital .rotulo { font-size: 0.78rem; color: var(--tinta-suave); font-weight: 700; }
+
+/* Vida / Sanidade / Erosões — versão editável (com botões +/-),
+   mostrada só quando a ficha está em modo de edição */
+.vital-editavel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.vital-editavel .valor { font-family: 'Special Elite'; font-size: 1.3rem; color: var(--azul-noite); }
+.vital-editavel button {
+  background: none;
+  border: none;
+  color: var(--agua-funda);
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 12px;
+}
+
+/* ---------- Abas (Memórias / História / Inventário na ficha) ---------- */
+.abas {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.aba {
+  flex: 1;
+  min-width: 100px;
+  text-align: center;
+  background: var(--agua-clara);
+  color: var(--azul-noite);
+  border: none;
+  border-radius: 12px;
+  padding: 10px 8px;
+  font-weight: 800;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer;
+}
+.aba.ativa { background: var(--azul-noite); color: var(--branco); }
+
+.divisor {
+  border: none;
+  border-top: 2px solid var(--agua-clara);
+  margin: 22px 0;
+}
+
+/* ---------- Atributos (círculos) ----------
+   Grade de 5 colunas (vira 3 colunas em telas pequenas, ver o
+   @media logo abaixo) com um círculo por atributo. */
+.grade-atributos {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 22px;
+}
+.atributo-circulo {
+  aspect-ratio: 1; /* sempre um círculo perfeito, não importa a largura */
+  min-width: 0;
+  border-radius: 50%;
+  background: var(--azul-noite);
+  color: var(--branco);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  gap: 2px;
+}
+.atributo-circulo .label { font-size: 0.75rem; opacity: 0.85; }
+.atributo-circulo .valor { font-family: 'Special Elite'; font-size: 1.15rem; }
+.atributo-circulo.editavel { cursor: pointer; }
+.atributo-circulo button {
+  background: none; border: none; color: var(--branco);
+  font-size: 0.85rem; cursor: pointer; line-height: 1; padding: 2px 6px;
+}
+
+/* em telas estreitas, 5 colunas ficam apertadas demais — usa 3 */
+@media (max-width: 420px) {
+  .grade-atributos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .atributo-circulo .label { font-size: 0.68rem; }
+  .atributo-circulo .valor { font-size: 1rem; }
+  .atributo-circulo button { padding: 2px 4px; font-size: 0.78rem; }
+}
+
+/* caixinha "Total à distribuir: N" acima das grades de atributo/perícia */
+.contador-pontos {
+  text-align: center;
+  background: var(--ceu);
+  border-radius: 12px;
+  padding: 10px;
+  font-weight: 700;
+  color: var(--agua-funda);
+  margin-bottom: 8px;
+}
+
+/* ---------- Perícias ---------- */
+.grade-pericias {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 18px;
+}
+.item-pericia {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  padding: 6px 0;
+  min-width: 0;
+}
+.item-pericia input { width: auto; }
+.item-pericia .bonus-tag {
+  margin-left: auto;
+  font-weight: 800;
+  color: var(--agua-funda);
+}
+/* perícia "travada" = já vem marcada pela especialização escolhida
+   (o checkbox fica desabilitado, ver criar.html) */
+.item-pericia.travada { color: var(--tinta-suave); }
+
+/* em telas estreitas, 2 colunas de perícia ficam apertadas — usa 1 */
+@media (max-width: 480px) {
+  .grade-pericias { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- Perícias editáveis (+/-) ----------
+   Versão da ficha em modo de edição: em vez de checkbox, cada
+   perícia tem botões de +/- pra ajustar o bônus diretamente. */
+.item-pericia .controle-pericia {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.item-pericia .controle-pericia button {
+  background: var(--agua-clara);
+  border: none;
+  color: var(--azul-noite);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.item-pericia .controle-pericia button:hover { background: #a9dcee; }
+.item-pericia .controle-pericia .bonus-tag {
+  min-width: 18px;
+  text-align: center;
+  margin-left: 0;
+}
+
+/* ---------- Legenda de atributos/perícias ----------
+   Lista compacta de "Nome: descrição" mostrada logo abaixo das
+   grades de atributos e de perícias (em criar.html e ficha.html),
+   pra explicar pra que serve cada um. Fica dentro de uma
+   <div class="dica-campo legenda-lista">, então já herda o fundo
+   azul-clarinho de .dica-campo — aqui só ajustamos o espaçamento
+   interno da lista. */
+.legenda-lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 16px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.legenda-lista .legenda-item { margin: 0; }
+.legenda-lista strong { color: var(--azul-noite); }
+
+/* em telas estreitas, 1 coluna só (mesmo ponto de quebra das perícias) */
+@media (max-width: 480px) {
+  .legenda-lista { grid-template-columns: 1fr; }
+}
+
+/* ---------- Painel da mestre: lista de players ---------- */
+.grade-players {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.cartao-player-wrapper {
+  position: relative; /* pra poder posicionar o botão de excluir em cima do card */
+}
+.cartao-player {
+  background: var(--agua-clara);
+  border: none;
+  border-radius: 14px;
+  padding: 18px 10px;
+  width: 100%;
+  text-align: center;
+  font-weight: 800;
+  color: var(--azul-noite);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.cartao-player:hover { background: #a9dcee; }
+.cartao-player .sub { display: block; font-weight: 600; font-size: 0.78rem; margin-top: 4px; color: var(--tinta-suave); }
+
+.botao-excluir-player {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #A3402B;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(20, 48, 70, 0.18);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.botao-excluir-player:hover { background: #FBE4DD; transform: scale(1.08); }
+
+@media (max-width: 480px) {
+  .grade-players { grid-template-columns: 1fr; }
+}
+
+/* ---------- Código de acesso em destaque (tela final da criação) ---------- */
+.codigo-destaque {
+  text-align: center;
+  background: var(--azul-noite);
+  color: var(--branco);
+  border-radius: 14px;
+  padding: 16px;
+  font-family: 'Special Elite';
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+  margin: 22px 0;
+}
+
+/* ---------- Mensagens de estado (erro / sucesso / info) ----------
+   Preenchidas via a função mostrarMensagem() em assets/app.js. */
+.mensagem {
+  text-align: center;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  margin: 14px 0;
+}
+.mensagem.erro { background: #FBE4DD; color: #A3402B; }
+.mensagem.sucesso { background: #DDF3E4; color: #276B3E; }
+.mensagem.info { background: var(--ceu); color: var(--agua-funda); }
+
+.centro { text-align: center; }
+.espaco-topo { margin-top: 18px; }
+
+/* ---------- Progresso da criação (pontinhos no topo de criar.html) ---------- */
+.progresso-passos {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 26px;
+}
+.progresso-passos .ponto {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--agua-clara);
+}
+/* o pontinho do passo atual vira uma "pílula" alongada */
+.progresso-passos .ponto.ativo { background: var(--azul-noite); width: 22px; border-radius: 6px; }

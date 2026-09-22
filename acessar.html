@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Acessar investigador — Assis Detetives Particulares</title>
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<!--
+  ACESSAR / LOGIN DO JOGADOR
+  ------------------------------------------------------------
+  Tela simples: o jogador digita o código de acesso dele
+  (tipo "ASSIS-7F2K"), a página busca a ficha correspondente no
+  banco e, se achar, redireciona pra ficha.html já com esse
+  código na URL (?codigo=...).
+-->
+<div class="pagina">
+  <div class="conteudo">
+    <div class="cartao">
+      <div class="cabecalho-secao">
+        <span class="onda-emoji">🔍</span> Assis Detetives Particulares / Acessando dossiê
+      </div>
+
+      <p class="centro" style="font-size:1.15rem; font-weight:700; color:var(--azul-noite); margin-bottom: 26px;">
+        De volta ao caso?<br>Bom te ver por aqui.
+      </p>
+
+      <label for="campo-codigo">Código de acesso:</label>
+      <input type="text" id="campo-codigo" placeholder="ASSIS-XXXXX" autocomplete="off" />
+
+      <p class="ajuda-texto">Esqueceu teu código?<br><a href="mestre.html">Fale com a coordenação!</a></p>
+
+      <!-- Caixinha de erro/sucesso, controlada por mostrarMensagem()
+           (definida em assets/app.js). Começa escondida. -->
+      <div id="mensagem" class="mensagem" style="display:none;"></div>
+
+      <button id="botao-acessar" class="botao botao-primario espaco-topo">Acessar</button>
+      <a href="index.html" class="botao botao-fantasma centro espaco-topo">← Voltar</a>
+    </div>
+  </div>
+</div>
+
+<!-- Biblioteca oficial do Supabase (cliente JS) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Cria "supabaseClient" com a URL/chave do seu projeto -->
+<script src="assets/supabase-config.js"></script>
+<!-- Funções compartilhadas (buscarInvestigadorPorCodigo, mostrarMensagem, etc.) -->
+<script src="assets/app.js"></script>
+<script>
+// Desenha as ondas decorativas do rodapé.
+inserirOndas();
+
+// Referências aos elementos da tela que vamos ler/alterar.
+const campoCodigo = document.getElementById("campo-codigo");
+const botaoAcessar = document.getElementById("botao-acessar");
+const mensagem = document.getElementById("mensagem");
+
+// Função chamada ao clicar em "Acessar" (ou apertar Enter no campo).
+async function tentarAcessar() {
+  const codigo = campoCodigo.value.trim();
+
+  // Não deixa mandar o formulário com o campo vazio.
+  if (!codigo) {
+    mostrarMensagem(mensagem, "Digita teu código de acesso primeiro :)", "erro");
+    return;
+  }
+
+  // Desabilita o botão e troca o texto enquanto espera a resposta
+  // do banco, pra evitar cliques duplicados.
+  botaoAcessar.disabled = true;
+  botaoAcessar.textContent = "Procurando...";
+  try {
+    const investigador = await buscarInvestigadorPorCodigo(codigo);
+    if (!investigador) {
+      // Código digitado não bate com nenhuma ficha no banco.
+      mostrarMensagem(mensagem, "Não achei nenhum investigador com esse código. Confere se digitou certo!", "erro");
+      return;
+    }
+    // Achou a ficha: guarda o código no navegador (pra próxima
+    // visita já vir preenchido/lembrado) e vai pra tela da ficha.
+    salvarCodigoLocal(investigador.codigo);
+    window.location.href = `ficha.html?codigo=${encodeURIComponent(investigador.codigo)}`;
+  } catch (e) {
+    // Erro de conexão com o Supabase (internet caiu, chave errada, etc.)
+    mostrarMensagem(mensagem, "Deu ruim pra conectar com o banco de dados. Tenta de novo em instantes.", "erro");
+    console.error(e);
+  } finally {
+    // Independente de dar certo ou errado, volta o botão ao normal.
+    botaoAcessar.disabled = false;
+    botaoAcessar.textContent = "Acessar";
+  }
+}
+
+botaoAcessar.addEventListener("click", tentarAcessar);
+// Permite apertar Enter no campo de código em vez de precisar clicar no botão.
+campoCodigo.addEventListener("keydown", (e) => { if (e.key === "Enter") tentarAcessar(); });
+</script>
+</body>
+</html>

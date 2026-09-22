@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Painel da mestre — Assis Detetives Particulares</title>
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<!--
+  PAINEL DA MESTRE
+  ------------------------------------------------------------
+  Página só pra você. Tem duas partes (dois cartões), e só um
+  fica visível por vez:
+  1) #cartao-login   → pede a senha (ver assets/mestre-config.js)
+  2) #cartao-painel  → depois de logar, mostra a grade com todos
+     os investigadores cadastrados; clicar em um abre a ficha dele
+     (com acesso de edição de atributos); o ícone de lixeira exclui.
+
+  A "sessão" de login fica só na aba do navegador (sessionStorage),
+  então se você fechar a aba ou abrir o site em outro dispositivo,
+  precisa digitar a senha de novo.
+-->
+<div class="pagina">
+  <div class="conteudo larga">
+
+    <!-- ---------- Cartão 1: tela de login ---------- -->
+    <div class="cartao" id="cartao-login">
+      <div class="logo-topo">
+        <h1 style="font-size:1.5rem;">Painel da coordenação</h1>
+        <p>Digita a senha pra ver o dossiê de todos os investigadores.</p>
+      </div>
+      <label for="campo-senha">Senha:</label>
+      <input type="password" id="campo-senha" placeholder="Sua senha de mestre" />
+      <div id="mensagem-login" class="mensagem" style="display:none;"></div>
+      <button id="botao-entrar" class="botao botao-primario espaco-topo">Entrar</button>
+      <a href="index.html" class="botao botao-fantasma centro">← Voltar</a>
+    </div>
+
+    <!-- ---------- Cartão 2: painel com a lista de investigadores ----------
+         Começa escondido (style="display:none") e só aparece depois
+         de um login correto, via mostrarPainel(). -->
+    <div class="cartao" id="cartao-painel" style="display:none;">
+      <div class="cabecalho-secao">
+        <span class="onda-emoji">🔍</span> Assis Detetives Particulares / Painel da coordenação
+      </div>
+      <label style="margin-top:0;">Dossiês dos investigadores:</label>
+      <div class="grade-players" id="grade-players"></div>
+      <p class="ajuda-texto" id="texto-vazio" style="display:none;">Nenhum investigador criado ainda.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- Biblioteca oficial do Supabase (cliente JS) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Cria "supabaseClient" com a URL/chave do seu projeto -->
+<script src="assets/supabase-config.js"></script>
+<!-- Define SENHA_MESTRE, usada logo abaixo em tentarLogin() -->
+<script src="assets/mestre-config.js"></script>
+<!-- Funções compartilhadas (listarInvestigadores, excluirInvestigador, etc.) -->
+<script src="assets/app.js"></script>
+<script>
+inserirOndas();
+
+const elMensagemLogin = document.getElementById("mensagem-login");
+
+// Confere a senha digitada contra SENHA_MESTRE (de mestre-config.js).
+// Se bater, marca a sessão como "logada" (sessionStorage — vale só
+// pra essa aba do navegador, some se fechar a aba) e mostra o painel.
+function tentarLogin() {
+  const senha = document.getElementById("campo-senha").value;
+  if (senha === SENHA_MESTRE) {
+    sessionStorage.setItem("dunas_mestre_ok", "1");
+    mostrarPainel();
+  } else {
+    mostrarMensagem(elMensagemLogin, "Senha incorreta.");
+  }
+}
+document.getElementById("botao-entrar").addEventListener("click", tentarLogin);
+// Permite apertar Enter no campo de senha em vez de clicar no botão.
+document.getElementById("campo-senha").addEventListener("keydown", (e) => { if (e.key === "Enter") tentarLogin(); });
+
+// Troca a tela de login pelo painel e busca todos os investigadores
+// no banco pra montar a grade de cards.
+async function mostrarPainel() {
+  document.getElementById("cartao-login").style.display = "none";
+  document.getElementById("cartao-painel").style.display = "block";
+  try {
+    const investigadores = await listarInvestigadores();
+    const grade = document.getElementById("grade-players");
+    grade.innerHTML = "";
+    document.getElementById("texto-vazio").style.display = "none";
+
+    // Nenhum investigador cadastrado ainda: mostra aviso e para por aqui.
+    if (investigadores.length === 0) {
+      document.getElementById("texto-vazio").style.display = "block";
+      return;
+    }
+
+    // Monta um "cartão" (botão) por investigador, com o botão de
+    // excluir (🗑️) sobreposto no canto — ver .cartao-player-wrapper
+    // e .botao-excluir-player em assets/style.css.
+    investigadores.forEach(inv => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "cartao-player-wrapper";
+
+      // Clicar no card abre a ficha desse investigador em modo
+      // "mestre" (&mestre=1), que libera a edição dos atributos.
+      const botao = document.createElement("button");
+      botao.className = "cartao-player";
+      botao.innerHTML = `${inv.nome || "(sem nome)"}<span class="sub">${inv.codigo}</span>`;
+      botao.addEventListener("click", () => {
+        window.location.href = `ficha.html?codigo=${encodeURIComponent(inv.codigo)}&mestre=1`;
+      });
+
+      const botaoExcluir = document.createElement("button");
+      botaoExcluir.className = "botao-excluir-player";
+      botaoExcluir.type = "button";
+      botaoExcluir.title = "Excluir investigador";
+      botaoExcluir.textContent = "🗑️";
+      botaoExcluir.addEventListener("click", (e) => {
+        // Impede que o clique "vaze" pro botão de baixo (que abriria a ficha).
+        e.stopPropagation();
+        excluirComConfirmacao(inv);
+      });
+
+      wrapper.appendChild(botao);
+      wrapper.appendChild(botaoExcluir);
+      grade.appendChild(wrapper);
+    });
+  } catch (e) {
+    document.getElementById("grade-players").innerHTML =
+      '<p class="ajuda-texto">Erro ao carregar investigadores do banco de dados.</p>';
+    console.error(e);
+  }
+}
+
+// Pede confirmação (janela nativa do navegador) antes de excluir
+// de vez a ficha de um investigador — ação que não tem "desfazer".
+async function excluirComConfirmacao(investigador) {
+  const nomeExibicao = investigador.nome || investigador.codigo;
+  const confirmar = window.confirm(
+    `Tem certeza que quer excluir a ficha de "${nomeExibicao}" (${investigador.codigo})?\n\nEssa ação não pode ser desfeita.`
+  );
+  if (!confirmar) return;
+  try {
+    await excluirInvestigador(investigador.codigo);
+    await mostrarPainel(); // recarrega a lista sem a ficha excluída
+  } catch (e) {
+    alert("Não consegui excluir essa ficha. Tenta de novo em instantes.");
+    console.error(e);
+  }
+}
+
+// Se essa aba já tinha logado antes (sessionStorage), pula direto
+// pro painel sem pedir a senha de novo.
+if (sessionStorage.getItem("dunas_mestre_ok") === "1") {
+  mostrarPainel();
+}
+</script>
+</body>
+</html>

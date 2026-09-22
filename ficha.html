@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Investigador — Assis Detetives Particulares</title>
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<!--
+  FICHA DO INVESTIGADOR
+  ------------------------------------------------------------
+  Esta página serve pra DUAS situações, controladas pela URL:
+  - ficha.html?codigo=ASSIS-XXXXX           → jogador vendo/editando a própria ficha
+  - ficha.html?codigo=ASSIS-XXXXX&mestre=1  → você (mestre) vendo a ficha de alguém,
+    com poder extra de editar também os atributos (o jogador comum só edita
+    perícias, vida/sanidade/erosões, avatar e os textos das abas)
+
+  A página tem dois "modos":
+  - modo leitura (padrão): mostra os dados, sem inputs editáveis
+  - modo edição (após clicar em "Editar"): troca vários blocos pela
+    versão editável (+/- em vez de texto fixo, textarea em vez de
+    parágrafo, etc.) até clicar em "Salvar alterações" ou "Cancelar"
+-->
+<div class="pagina">
+  <div class="conteudo">
+
+    <!-- Cartão principal da ficha — some enquanto os dados ainda
+         não chegaram do banco (ver #cartao-carregando abaixo). -->
+    <div class="cartao" id="cartao-ficha" style="display:none;">
+      <div class="cabecalho-secao">
+        <span class="onda-emoji">🔍</span> Assis Detetives Particulares / Dossiê do investigador
+      </div>
+
+      <!-- Foto + nome/idade/especialização + (se for a mestre) o código de acesso -->
+      <div class="cabecalho-ficha">
+        <div class="avatar-circulo" id="avatar-clicavel" style="position:relative;">
+          <img id="avatar-preview" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover;" />
+          <svg id="avatar-padrao" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="16" r="8" fill="#DFF3FA"/></svg>
+          <!-- lapisinho só aparece em modo de edição, indicando que dá pra trocar a foto -->
+          <span id="avatar-lapis" style="display:none; position:absolute; bottom:2px; right:2px; background:var(--azul-noite); color:#fff; border-radius:50%; width:24px; height:24px; align-items:center; justify-content:center; font-size:0.8rem;">✏️</span>
+        </div>
+        <input type="file" id="input-avatar" accept="image/*" style="display:none;" />
+        <div class="info-basica">
+          <p><strong>Nome:</strong> <span id="v-nome"></span></p>
+          <p><strong>Idade:</strong> <span id="v-idade"></span></p>
+          <p><strong>Especialização:</strong> <span id="v-especializacao"></span></p>
+          <!-- linha do código só aparece no modo mestre (?mestre=1) -->
+          <p id="linha-codigo" style="display:none;"><strong>Código:</strong> <span id="v-codigo"></span></p>
+        </div>
+      </div>
+
+      <!-- Vida / Sanidade / Erosões — versão só de leitura -->
+      <div class="faixa-vitais" id="faixa-vitais-visual">
+        <div class="vital"><div class="valor" id="v-vida">--</div><div class="rotulo">VIDA</div></div>
+        <div class="vital"><div class="valor" id="v-sanidade">--</div><div class="rotulo">SANIDADE</div></div>
+        <div class="vital"><div class="valor" id="v-erosoes">--</div><div class="rotulo">EROSÕES</div></div>
+      </div>
+      <!-- Vida / Sanidade / Erosões — versão editável (+/-), escondida até entrar em modo de edição -->
+      <div class="faixa-vitais" id="faixa-vitais-editavel" style="display:none;">
+        <div class="vital vital-editavel">
+          <button type="button" data-acao="menos" data-vital="vida">−</button>
+          <div class="valor" id="edit-valor-vida">--</div>
+          <button type="button" data-acao="mais" data-vital="vida">+</button>
+          <div class="rotulo">VIDA</div>
+        </div>
+        <div class="vital vital-editavel">
+          <button type="button" data-acao="menos" data-vital="sanidade">−</button>
+          <div class="valor" id="edit-valor-sanidade">--</div>
+          <button type="button" data-acao="mais" data-vital="sanidade">+</button>
+          <div class="rotulo">SANIDADE</div>
+        </div>
+        <div class="vital vital-editavel">
+          <button type="button" data-acao="menos" data-vital="erosoes">−</button>
+          <div class="valor" id="edit-valor-erosoes">--</div>
+          <button type="button" data-acao="mais" data-vital="erosoes">+</button>
+          <div class="rotulo">EROSÕES</div>
+        </div>
+      </div>
+
+      <!-- Abas de texto livre: Memórias / História / Inventário.
+           Só uma fica visível por vez (ver mostrarAba() no JS). -->
+      <div class="abas">
+        <button class="aba ativa" data-aba="memorias">Memórias</button>
+        <button class="aba" data-aba="historia">História</button>
+        <button class="aba" data-aba="inventario">Inventário</button>
+      </div>
+
+      <!-- Versão leitura do conteúdo da aba ativa -->
+      <div id="conteudo-aba-visual" class="dica-campo" style="min-height:70px;"></div>
+      <!-- Versão editável (textarea), escondida até entrar em modo de edição -->
+      <textarea id="conteudo-aba-editavel" style="display:none;"></textarea>
+
+      <hr class="divisor" />
+
+      <label style="margin-top:0;" id="rotulo-atributos">Seus atributos:</label>
+      <div class="grade-atributos" id="grade-atributos-ficha"></div>
+      <!-- Legenda fixa explicando pra que serve cada atributo (mesmo
+           texto de criar.html, vindo de ATRIBUTOS em assets/regras.js) -->
+      <div class="dica-campo legenda-lista" id="legenda-atributos"></div>
+
+      <label id="rotulo-pericias">Suas perícias:</label>
+      <div class="grade-pericias" id="grade-pericias-ficha"></div>
+      <!-- Legenda fixa explicando pra que serve cada perícia -->
+      <div class="dica-campo legenda-lista" id="legenda-pericias"></div>
+
+      <div id="mensagem" class="mensagem" style="display:none;"></div>
+
+      <!-- Botões do modo leitura -->
+      <div class="linha-botoes">
+        <button id="botao-especializacao" class="botao botao-secundario">Especialização</button>
+        <button id="botao-editar" class="botao botao-primario">Editar</button>
+      </div>
+      <!-- Botões do modo edição (escondidos até clicar em "Editar") -->
+      <div id="linha-salvar" style="display:none;" class="linha-botoes">
+        <button id="botao-cancelar" class="botao botao-secundario">Cancelar</button>
+        <button id="botao-salvar" class="botao botao-primario">Salvar alterações</button>
+      </div>
+
+      <!-- Link de rodapé: muda de texto dependendo se é o jogador
+           ou a mestre olhando a ficha (ver preencherTela() no JS) -->
+      <p class="ajuda-texto" id="link-rodape"></p>
+    </div>
+
+    <!-- Mostrado enquanto os dados ainda não chegaram do banco -->
+    <div class="cartao" id="cartao-carregando">
+      <p class="centro">Carregando investigador...</p>
+    </div>
+  </div>
+</div>
+
+<!-- Biblioteca oficial do Supabase (cliente JS) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Cria "supabaseClient" com a URL/chave do seu projeto -->
+<script src="assets/supabase-config.js"></script>
+<!-- Define ATRIBUTOS / PERICIAS / ESPECIALIZACOES / REGRAS (window.REGRAS_JOGO) -->
+<script src="assets/regras.js"></script>
+<!-- Funções compartilhadas (buscarInvestigadorPorCodigo, atualizarInvestigador, etc.) -->
+<script src="assets/app.js"></script>
+<script>
+inserirOndas();
+
+const { ATRIBUTOS, PERICIAS, REGRAS } = window.REGRAS_JOGO;
+
+// Lê "?codigo=" e "&mestre=1" da URL da página.
+// Se não vier código na URL, cai pro último código salvo no
+// navegador (pegarCodigoLocal(), em app.js) — assim o jogador que
+// já acessou antes não precisa digitar de novo.
+const parametros = new URLSearchParams(window.location.search);
+const codigoUrl = parametros.get("codigo") || pegarCodigoLocal();
+const modoMestre = parametros.get("mestre") === "1";
+
+const elMensagem = document.getElementById("mensagem");
+let investigadorAtual = null; // guarda os dados carregados do banco
+let abaAtiva = "memorias";    // qual aba (Memórias/História/Inventário) está aberta
+let emEdicao = false;         // se a ficha está em modo de edição
+
+// Busca a ficha no banco a partir do código e monta a tela. Se não
+// tiver nenhum código disponível (nem na URL nem salvo localmente),
+// manda o usuário pra tela de login (acessar.html).
+async function carregar() {
+  if (!codigoUrl) {
+    window.location.href = "acessar.html";
+    return;
+  }
+  try {
+    const dados = await buscarInvestigadorPorCodigo(codigoUrl);
+    if (!dados) {
+      document.getElementById("cartao-carregando").innerHTML =
+        '<p class="centro">Não achei esse investigador. <a href="acessar.html">Tentar de novo</a></p>';
+      return;
+    }
+    investigadorAtual = dados;
+    document.getElementById("cartao-carregando").style.display = "none";
+    document.getElementById("cartao-ficha").style.display = "block";
+    preencherTela();
+  } catch (e) {
+    document.getElementById("cartao-carregando").innerHTML =
+      '<p class="centro">Erro ao conectar com o banco de dados. Tenta recarregar a página.</p>';
+    console.error(e);
+  }
+}
+
+// Preenche todos os campos da tela com os dados de investigadorAtual.
+// Chamada sempre que os dados mudam (carregamento inicial, depois
+// de salvar, depois de cancelar edição).
+function preencherTela() {
+  const inv = investigadorAtual;
+  document.getElementById("v-nome").textContent = inv.nome;
+  document.getElementById("v-idade").textContent = inv.idade;
+  document.getElementById("v-especializacao").textContent = inv.especializacao;
+  document.getElementById("v-vida").textContent = inv.vida;
+  document.getElementById("v-sanidade").textContent = inv.sanidade;
+  document.getElementById("v-erosoes").textContent = inv.erosoes;
+
+  if (inv.avatar) {
+    document.getElementById("avatar-preview").src = inv.avatar;
+    document.getElementById("avatar-preview").style.display = "block";
+    document.getElementById("avatar-padrao").style.display = "none";
+  }
+
+  // Só no modo mestre (?mestre=1) o código de acesso fica visível
+  // na tela, e o link do rodapé volta pro painel em vez de "trocar
+  // de investigador" (que não faz sentido pra mestre).
+  if (modoMestre) {
+    document.getElementById("linha-codigo").style.display = "block";
+    document.getElementById("v-codigo").textContent = inv.codigo;
+    document.getElementById("link-rodape").innerHTML = '<a href="mestre.html">← Voltar pro painel da coordenação</a>';
+  } else {
+    document.getElementById("link-rodape").innerHTML = '<a href="acessar.html">Trocar de investigador</a>';
+  }
+
+  renderizarAtributosFicha();
+  renderizarPericiasFicha();
+  mostrarAba(abaAtiva);
+}
+
+/* ---------- Legendas de atributos e perícias ----------
+   Assim como em criar.html, essas legendas são fixas — não mudam
+   conforme o investigador carregado — então só precisam ser
+   montadas uma vez, aqui fora de preencherTela(). */
+function renderizarLegendaAtributos() {
+  const el = document.getElementById("legenda-atributos");
+  el.innerHTML = ATRIBUTOS
+    .map(a => `<p class="legenda-item"><strong>${a.label} — ${a.nome}:</strong> ${a.descricao}</p>`)
+    .join("");
+}
+function renderizarLegendaPericias() {
+  const el = document.getElementById("legenda-pericias");
+  el.innerHTML = PERICIAS
+    .map(p => `<p class="legenda-item"><strong>${p.nome}:</strong> ${p.descricao}</p>`)
+    .join("");
+}
+renderizarLegendaAtributos();
+renderizarLegendaPericias();
+
+/* ---------- Abas: Memórias / História / Inventário ---------- */
+
+// Devolve o texto salvo daquela aba (ou um texto padrão se estiver vazio).
+function textoDaAba(aba) {
+  if (aba === "memorias") return investigadorAtual.memorias || "Ainda sem memórias registradas.";
+  if (aba === "historia") return investigadorAtual.historia || "Ainda sem história registrada.";
+  if (aba === "inventario") return investigadorAtual.inventario || "Inventário vazio.";
+}
+
+// Troca a aba ativa: marca o botão certo como "ativa" e atualiza o
+// conteúdo mostrado (visual ou editável, dependendo do modo atual).
+function mostrarAba(aba) {
+  abaAtiva = aba;
+  document.querySelectorAll(".aba").forEach(b => b.classList.toggle("ativa", b.dataset.aba === aba));
+  if (emEdicao) {
+    document.getElementById("conteudo-aba-editavel").value =
+      aba === "memorias" ? (investigadorAtual.memorias || "") :
+      aba === "historia" ? (investigadorAtual.historia || "") :
+      (investigadorAtual.inventario || "");
+  } else {
+    document.getElementById("conteudo-aba-visual").textContent = textoDaAba(aba);
+  }
+}
+document.querySelectorAll(".aba").forEach(b => b.addEventListener("click", () => mostrarAba(b.dataset.aba)));
+
+/* ---------- Atributos na ficha ----------
+   Em modo leitura, os atributos aparecem só como números fixos.
+   Em modo de edição, SÓ a mestre (modoMestre) pode alterá-los —
+   um jogador comum não edita os próprios atributos pela ficha,
+   só as perícias (ver função renderizarPericiasFicha abaixo). */
+function renderizarAtributosFicha() {
+  const grade = document.getElementById("grade-atributos-ficha");
+  grade.innerHTML = "";
+  ATRIBUTOS.forEach(attr => {
+    const valor = (investigadorAtual.atributos || {})[attr.chave] ?? 0;
+    const div = document.createElement("div");
+    div.className = "atributo-circulo" + (emEdicao && modoMestre ? " editavel" : "");
+    if (emEdicao && modoMestre) {
+      div.innerHTML = `
+        <button data-acao="menos" data-attr="${attr.chave}">−</button>
+        <span class="label">${attr.label}</span>
+        <span class="valor">${valor}</span>
+        <button data-acao="mais" data-attr="${attr.chave}">+</button>`;
+    } else {
+      div.innerHTML = `<span class="label">${attr.label}</span><span class="valor">${valor}</span>`;
+    }
+    grade.appendChild(div);
+  });
+}
+document.getElementById("grade-atributos-ficha").addEventListener("click", (e) => {
+  const botao = e.target.closest("button");
+  // Só reage a cliques se estiver em edição E for a mestre — em
+  // qualquer outro caso não tem nem botão pra clicar (ver acima).
+  if (!botao || !emEdicao || !modoMestre) return;
+  const chave = botao.dataset.attr;
+  const atributos = investigadorAtual.atributos || {};
+  if (botao.dataset.acao === "mais" && atributos[chave] < REGRAS.maxPorAtributo + REGRAS.bonusAtributoEspecializacao) atributos[chave]++;
+  if (botao.dataset.acao === "menos" && atributos[chave] > 0) atributos[chave]--;
+  investigadorAtual.atributos = atributos;
+  renderizarAtributosFicha();
+});
+
+// Mostra sempre as 15 perícias do jogo (não só as escolhidas na criação).
+// No modo de edição, tanto a mestre quanto o próprio jogador conseguem
+// ajustar o bônus de qualquer perícia (diferente dos atributos, que só
+// a mestre edita).
+function renderizarPericiasFicha() {
+  const grade = document.getElementById("grade-pericias-ficha");
+  grade.innerHTML = "";
+  const periciasSalvas = investigadorAtual.pericias || [];
+  PERICIAS.forEach(pDef => {
+    const salva = periciasSalvas.find(p => p.chave === pDef.chave);
+    const valor = salva ? salva.bonus : 0;
+    const div = document.createElement("div");
+    div.className = "item-pericia";
+    if (emEdicao) {
+      div.innerHTML = `
+        ${pDef.nome}
+        <span class="controle-pericia">
+          <button type="button" data-acao="menos" data-pericia="${pDef.chave}">−</button>
+          <span class="bonus-tag">${valor}</span>
+          <button type="button" data-acao="mais" data-pericia="${pDef.chave}">+</button>
+        </span>`;
+    } else {
+      div.innerHTML = `${pDef.nome} <span class="bonus-tag">+${valor}</span>`;
+    }
+    grade.appendChild(div);
+  });
+}
+document.getElementById("grade-pericias-ficha").addEventListener("click", (e) => {
+  const botao = e.target.closest("button");
+  if (!botao || !emEdicao) return;
+  const chave = botao.dataset.pericia;
+  const periciasAtuais = investigadorAtual.pericias ? [...investigadorAtual.pericias] : [];
+  let item = periciasAtuais.find(p => p.chave === chave);
+  // Se essa perícia ainda não tinha nenhum bônus salvo, cria a
+  // entrada dela na hora (começando do zero) antes de incrementar.
+  if (!item) {
+    const def = PERICIAS.find(p => p.chave === chave);
+    item = { chave: def.chave, nome: def.nome, bonus: 0 };
+    periciasAtuais.push(item);
+  }
+  const maximo = REGRAS.maxPorAtributo + REGRAS.bonusAtributoEspecializacao;
+  if (botao.dataset.acao === "mais" && item.bonus < maximo) item.bonus++;
+  if (botao.dataset.acao === "menos" && item.bonus > 0) item.bonus--;
+  investigadorAtual.pericias = periciasAtuais;
+  renderizarPericiasFicha();
+});
+
+/* ---------- Vida, sanidade e erosões editáveis ----------
+   Usa botões +/- em vez de um campo de texto solto, porque é mais
+   confiável de tocar certo no celular. */
+function renderizarVitaisEditaveis() {
+  document.getElementById("edit-valor-vida").textContent = investigadorAtual.vida;
+  document.getElementById("edit-valor-sanidade").textContent = investigadorAtual.sanidade;
+  document.getElementById("edit-valor-erosoes").textContent = investigadorAtual.erosoes;
+}
+document.getElementById("faixa-vitais-editavel").addEventListener("click", (e) => {
+  const botao = e.target.closest("button");
+  if (!botao || !emEdicao) return;
+  const campo = botao.dataset.vital; // "vida" | "sanidade" | "erosoes"
+  let valor = Number(investigadorAtual[campo]) || 0;
+  if (botao.dataset.acao === "mais") valor++;
+  if (botao.dataset.acao === "menos" && valor > 0) valor--;
+  investigadorAtual[campo] = valor;
+  renderizarVitaisEditaveis();
+});
+
+/* ---------- Foto de perfil (avatar) ----------
+   Só é clicável (abre o seletor de arquivo) quando está em modo
+   de edição — ver a condição "if (emEdicao)" abaixo. */
+const avatarClicavel = document.getElementById("avatar-clicavel");
+const inputAvatar = document.getElementById("input-avatar");
+const avatarLapis = document.getElementById("avatar-lapis");
+
+avatarClicavel.addEventListener("click", () => {
+  if (emEdicao) inputAvatar.click();
+});
+inputAvatar.addEventListener("change", async () => {
+  const arquivo = inputAvatar.files[0];
+  if (!arquivo) return;
+  try {
+    const dataUrl = await redimensionarImagem(arquivo, 300);
+    investigadorAtual.avatar = dataUrl;
+    document.getElementById("avatar-preview").src = dataUrl;
+    document.getElementById("avatar-preview").style.display = "block";
+    document.getElementById("avatar-padrao").style.display = "none";
+  } catch (e) {
+    mostrarMensagem(elMensagem, "Não consegui carregar essa imagem, tenta outra.");
+    console.error(e);
+  }
+});
+
+// Botão "Especialização": mostra a descrição da especialização do
+// investigador numa mensagem informativa (não abre modo de edição).
+document.getElementById("botao-especializacao").addEventListener("click", () => {
+  const { ESPECIALIZACOES } = window.REGRAS_JOGO;
+  const esp = ESPECIALIZACOES.find(e => e.nome === investigadorAtual.especializacao);
+  const texto = esp && esp.descricao
+    ? `${investigadorAtual.especializacao}: ${esp.descricao}`
+    : investigadorAtual.especializacao;
+  mostrarMensagem(elMensagem, texto, "info");
+});
+
+/* ---------- Alternar entre modo leitura e modo edição ---------- */
+const botaoEditar = document.getElementById("botao-editar");
+const linhaSalvar = document.getElementById("linha-salvar");
+const faixaVitaisVisual = document.getElementById("faixa-vitais-visual");
+const faixaVitaisEditavel = document.getElementById("faixa-vitais-editavel");
+const visualAba = document.getElementById("conteudo-aba-visual");
+const editavelAba = document.getElementById("conteudo-aba-editavel");
+const rotuloAtributos = document.getElementById("rotulo-atributos");
+const rotuloPericias = document.getElementById("rotulo-pericias");
+
+// Troca a ficha inteira pro "modo de edição": esconde as versões
+// de leitura e mostra as editáveis em cada bloco (vitais, aba de
+// texto, atributos, perícias, avatar).
+function entrarModoEdicao() {
+  emEdicao = true;
+  botaoEditar.style.display = "none";
+  linhaSalvar.style.display = "flex";
+  document.getElementById("botao-especializacao").style.display = "none";
+  avatarLapis.style.display = "flex";
+  avatarClicavel.style.cursor = "pointer";
+
+  faixaVitaisVisual.style.display = "none";
+  faixaVitaisEditavel.style.display = "flex";
+  renderizarVitaisEditaveis();
+
+  visualAba.style.display = "none";
+  editavelAba.style.display = "block";
+  rotuloAtributos.textContent = modoMestre ? "Atributos (clique +/- pra ajustar):" : "Seus atributos:";
+  rotuloPericias.textContent = "Perícias (clique +/- pra ajustar):";
+
+  mostrarAba(abaAtiva);
+  renderizarAtributosFicha();
+  renderizarPericiasFicha();
+}
+
+// Volta a ficha pro "modo de leitura", desfazendo visualmente o
+// que entrarModoEdicao() tinha trocado.
+function sairModoEdicao() {
+  emEdicao = false;
+  botaoEditar.style.display = "inline-flex";
+  linhaSalvar.style.display = "none";
+  document.getElementById("botao-especializacao").style.display = "inline-flex";
+  avatarLapis.style.display = "none";
+  avatarClicavel.style.cursor = "default";
+  faixaVitaisVisual.style.display = "flex";
+  faixaVitaisEditavel.style.display = "none";
+  visualAba.style.display = "block";
+  editavelAba.style.display = "none";
+  rotuloAtributos.textContent = "Seus atributos:";
+  rotuloPericias.textContent = "Suas perícias:";
+  renderizarAtributosFicha();
+  renderizarPericiasFicha();
+}
+
+botaoEditar.addEventListener("click", entrarModoEdicao);
+
+// "Cancelar": descarta qualquer alteração feita na tela, recarrega
+// os dados originais do banco (carregarSemTela) e volta pro modo leitura.
+document.getElementById("botao-cancelar").addEventListener("click", async () => {
+  await carregarSemTela();
+  sairModoEdicao();
+});
+
+// Igual a carregar(), mas sem mexer nas telas de "carregando"/"ficha"
+// (usado só pelo botão Cancelar, que já está com a ficha visível).
+async function carregarSemTela() {
+  investigadorAtual = await buscarInvestigadorPorCodigo(codigoUrl);
+  preencherTela();
+}
+
+// "Salvar alterações": junta tudo que foi editado na tela (texto da
+// aba ativa, perícias completas, vida/sanidade/erosões, avatar e,
+// se for a mestre, os atributos também) e manda pro banco.
+document.getElementById("botao-salvar").addEventListener("click", async () => {
+  const textoAtual = editavelAba.value;
+  if (abaAtiva === "memorias") investigadorAtual.memorias = textoAtual;
+  if (abaAtiva === "historia") investigadorAtual.historia = textoAtual;
+  if (abaAtiva === "inventario") investigadorAtual.inventario = textoAtual;
+
+  // Garante que as 15 perícias sejam salvas por completo (mesmo as
+  // que ficaram em 0), pra não perder nenhuma perícia que o jogador
+  // não mexeu nessa sessão de edição.
+  const periciasCompletas = PERICIAS.map(pDef => {
+    const atual = (investigadorAtual.pericias || []).find(p => p.chave === pDef.chave);
+    return { chave: pDef.chave, nome: pDef.nome, bonus: atual ? atual.bonus : 0 };
+  });
+  investigadorAtual.pericias = periciasCompletas;
+
+  const dadosParaSalvar = {
+    vida: Number(investigadorAtual.vida) || 0,
+    sanidade: Number(investigadorAtual.sanidade) || 0,
+    erosoes: Number(investigadorAtual.erosoes) || 0,
+    memorias: investigadorAtual.memorias || "",
+    historia: investigadorAtual.historia || "",
+    inventario: investigadorAtual.inventario || "",
+    avatar: investigadorAtual.avatar || "",
+    pericias: periciasCompletas,
+  };
+  // Atributos só entram no que é salvo se for a mestre editando —
+  // um jogador comum nunca deveria conseguir alterar os próprios
+  // atributos por aqui (mesmo que tentasse manipular o HTML/JS).
+  if (modoMestre) {
+    dadosParaSalvar.atributos = investigadorAtual.atributos;
+  }
+
+  try {
+    investigadorAtual = await atualizarInvestigador(investigadorAtual.codigo, dadosParaSalvar);
+    mostrarMensagem(elMensagem, "Alterações salvas!", "sucesso");
+    preencherTela();
+    sairModoEdicao();
+  } catch (e) {
+    mostrarMensagem(elMensagem, "Não consegui salvar. Tenta de novo.", "erro");
+    console.error(e);
+  }
+});
+
+// Ponto de partida: assim que a página carrega, busca a ficha no banco.
+carregar();
+</script>
+</body>
+</html>
