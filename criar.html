@@ -9,19 +9,8 @@
 <body>
 
 <!--
-  CRIAR / ABRIR DOSSIÊ (assistente em 4 passos)
+  CRIAR / ABRIR DOSSIÊ
   ------------------------------------------------------------
-  Cada <section class="passo" id="passo-N"> é uma "tela" do
-  assistente. Só uma fica visível por vez — o JS lá embaixo troca
-  o "display" delas e controla os pontinhos de progresso no topo.
-
-  Passo 1: identidade (foto, nome, idade, especialização)
-  Passo 2: história e memórias (texto livre)
-  Passo 3: distribuição de atributos e escolha de perícias
-  Passo 4: tela final, com o código de acesso gerado
-
-  O mesmo botão "salvar e seguir" avança de passo em passo; no
-  último passo ele vira "Concluir" e de fato salva tudo no banco.
 -->
 <div class="pagina">
   <div class="conteudo">
@@ -30,9 +19,7 @@
         <span class="onda-emoji">🔍</span> Assis Detetives Particulares / Abrindo dossiê
       </div>
 
-      <!-- Pontinhos de progresso (um por passo). O JS marca o passo
-           atual com a classe "ativo" (vira uma pílula alongada, ver
-           .progresso-passos .ponto.ativo em assets/style.css). -->
+      <!-- Pontinhos de progresso (um por passo) -->
       <div class="progresso-passos">
         <span class="ponto ativo" data-passo="1"></span>
         <span class="ponto" data-passo="2"></span>
