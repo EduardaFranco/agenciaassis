@@ -1,41 +1,8 @@
-/* ============================================================
-   REGRAS.JS — "motor de regras" do RPG
-   ============================================================
-   Este arquivo é o ÚNICO lugar que você precisa mexer pra ajustar
-   as regras do seu jogo (atributos, perícias, especializações e
-   os números da criação de personagem). Todas as páginas do site
-   (criar.html, ficha.html) leem essas listas daqui — então uma
-   mudança aqui se reflete automaticamente em todo o site.
 
-   Tudo isso é guardado dentro de "window.REGRAS_JOGO" lá no final
-   do arquivo, que é como as outras páginas conseguem "importar"
-   essas informações (veja a linha
-   "const { ATRIBUTOS, PERICIAS, ... } = window.REGRAS_JOGO;"
-   no <script> de criar.html e ficha.html).
-   ============================================================ */
-
-// A "IIFE" (function () { ... })() aqui embaixo é só uma forma de
-// isolar as variáveis deste arquivo, pra elas não vazarem soltas
-// pro resto da página (evita bagunçar o "window" com nomes como
-// ATRIBUTOS, PERICIAS etc. — só window.REGRAS_JOGO fica exposto).
 (function () {
 
 /* ------------------------------------------------------------
    ATRIBUTOS
-   ------------------------------------------------------------
-   São os 4 "circulozinhos" que aparecem na ficha e na criação.
-   Cada perícia (lá embaixo) está ligada a um desses atributos,
-   e o valor do atributo vira o bônus base daquela perícia.
-
-   Campos de cada atributo:
-   - chave: identificador curto usado internamente no código e
-     salvo no banco de dados (não mude depois que já tiver gente
-     jogando, ou as fichas antigas ficam com a chave errada).
-   - label: sigla mostrada dentro do círculo na tela (3 letras).
-   - nome: nome completo do atributo.
-   - descricao: texto curto mostrado como legenda pros players
-     entenderem pra que serve cada atributo (aparece embaixo da
-     grade de atributos em criar.html e ficha.html).
    ------------------------------------------------------------ */
 const ATRIBUTOS = [
   {
@@ -66,21 +33,6 @@ const ATRIBUTOS = [
 
 /* ------------------------------------------------------------
    PERICIAS
-   ------------------------------------------------------------
-   São as habilidades específicas que aparecem na ficha (ex:
-   "Furtividade", "Dedução"). Cada perícia pertence a um dos
-   atributos acima (campo "atributo", que deve bater com uma das
-   "chave" da lista ATRIBUTOS) — isso é usado tanto pra calcular o
-   bônus quanto pra decidir qual especialização dá bônus grátis
-   em qual perícia.
-
-   Campos de cada perícia:
-   - chave: identificador interno (não mude depois de já ter
-     fichas salvas com essa perícia).
-   - nome: nome mostrado na tela.
-   - atributo: a qual atributo essa perícia está ligada.
-   - descricao: texto curto explicando pra que ela serve, mostrado
-     como legenda embaixo da grade de perícias.
    ------------------------------------------------------------ */
 const PERICIAS = [
   {
@@ -177,22 +129,6 @@ const PERICIAS = [
 
 /* ------------------------------------------------------------
    ESPECIALIZACOES
-   ------------------------------------------------------------
-   O "tipo" de investigador que o player escolhe no passo 1 da
-   criação (select "Especialização"). Cada especialização:
-   - dá um bônus extra de atributo (REGRAS.bonusAtributoEspecializacao)
-     que já entra automaticamente no total de pontos a distribuir;
-   - dá uma perícia "grátis" com esse mesmo bônus, travada (o
-     player não escolhe — ela já vem marcada e soma o bônus
-     automaticamente, ver "periciaGratis" em criar.html).
-
-   Campos de cada especialização:
-   - nome: mostrado no <select> e salvo na ficha do investigador.
-   - periciaBonus: a "chave" (ver PERICIAS acima) da perícia que
-     ganha o bônus grátis dessa especialização.
-   - descricao: texto mostrado abaixo do <select> quando o player
-     escolhe essa especialização (também aparece no botão
-     "Especialização" da ficha já pronta).
    ------------------------------------------------------------ */
 const ESPECIALIZACOES = [
   {
@@ -234,11 +170,6 @@ const ESPECIALIZACOES = [
 
 /* ------------------------------------------------------------
    REGRAS
-   ------------------------------------------------------------
-   Números soltos que controlam a criação de personagem e os
-   valores iniciais da ficha. Mude aqui se quiser um jogo mais
-   "brutal" (vida menor), personagens mais versáteis (mais pontos
-   de perícia) etc.
    ------------------------------------------------------------ */
 const REGRAS = {
   vidaBase: 10,       // vida inicial de todo investigador recém-criado
@@ -249,15 +180,9 @@ const REGRAS = {
   maxPorAtributo: 5,              // valor máximo que um atributo pode ter (sem contar bônus de especialização)
   bonusAtributoEspecializacao: 2, // pontos extras de atributo (e de perícia) que a especialização escolhida dá de graça
 
-  numeroPericiasEscolhidas: 3, // quantas perícias (além da que a especialização já dá de graça) o player escolhe pra ganhar bônus na criação
+  numeroPericiasEscolhidas: 5, // quantas perícias (além da que a especialização já dá de graça) o player escolhe pra ganhar bônus na criação
 };
 
-/* ------------------------------------------------------------
-   Exporta tudo isso pra "window.REGRAS_JOGO", que é o jeito das
-   outras páginas acessarem essas listas (elas incluem este
-   arquivo com <script src="assets/regras.js"></script> antes do
-   próprio <script> delas).
-   ------------------------------------------------------------ */
 window.REGRAS_JOGO = { ATRIBUTOS, PERICIAS, ESPECIALIZACOES, REGRAS };
 
 })();
